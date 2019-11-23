@@ -19,7 +19,6 @@ def accept_connection(client_sock):
     events = selectors.EVENT_READ | selectors.EVENT_WRITE
     sock_selector.register(conn, events, data=data)
 
-
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind(('127.0.0.1', 6667))
     s.listen()
@@ -28,8 +27,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     sock_selector.register(s, selectors.EVENT_READ, data=None)
 
     while True:
-        event = sock_selector.select(timeout=None)
-        for key, mask in event:
+        events = sock_selector.select(timeout=None)
+        for key, mask in events:
             if key.data is None:
                 accept_connection(key.fileobj)
 
