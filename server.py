@@ -17,8 +17,8 @@ HOST = '127.0.0.1'
 PORT = 6667
 
 
-def accept_connection(client_sock):
-    conn, addr = client_sock.accept()
+def accept_connection(server_sock):
+    conn, addr = server_sock.accept()
 
     mask = selectors.EVENT_READ | selectors.EVENT_WRITE
     sock_selector.register(conn, mask, data=Client())
