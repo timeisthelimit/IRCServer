@@ -9,11 +9,11 @@
     - No specific char set specified
     - Protocol is based on a set of 8-bit codes (octets)
     - A message is made up of any number of these octets
-    - Some octet values act as as message delimiters
+    - Some octet values act as message delimiters
     - Curly braces '{}' are lowercase equivelent of square brackets '[]'
 - Messages
     - Not all messages generate a reply
-    - A valid command is from a client is expected to generate a reply from the server
+    - A valid command from a client is expected to generate a reply from the server
     - It is not advised to wait forever for a reply
     - A message consists of:
         - prefix (optional)
