@@ -2,6 +2,7 @@
 # Socket code inspired by and taken from RealPython tutorial
 # on sockets (https://realpython.com/python-sockets/)
 
+import parser
 import socket
 import selectors
 import time
