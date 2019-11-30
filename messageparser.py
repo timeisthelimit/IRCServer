@@ -1,10 +1,11 @@
 #Pases messages into logical parsed message objects
 class MessageParser:
-    prefix=''
-    command=''
-    parameters=[]
-
+    
     def parseMessage(self, message):
+        prefix=''
+        command=''
+        parameters=[]
+
         message_length = len(message)
         beg= 0
         end= 1
@@ -17,7 +18,7 @@ class MessageParser:
             end+=1
             while message[end] != chr(0x20):
                 end+=1
-            self.prefix= message[beg:end]
+            prefix= message[beg:end]
             beg= end+1
             end= beg+1
 
@@ -25,16 +26,16 @@ class MessageParser:
         if ord(message[beg]) >= 48 and ord(message[beg]) <= 57:
             end= end+2
             for i in range(beg,end):
-                self.command+= message[i]
+                command+= message[i]
             beg= end+1
             end= beg+1
         else:
             while message[end] != chr(0x20):
                 end+=1
                 if message[end] == '\r':
-                    self.command = message[beg:end]
-                    return (self.prefix, self.command, [])
-            self.command = message[beg:end]
+                    command = message[beg:end]
+                    return (prefix, command, [])
+            command = message[beg:end]
             beg= end+1
             end= beg+1
 
@@ -48,20 +49,20 @@ class MessageParser:
                 while True:
                     end+=1
                     if message[end] == '\r':
-                        self.parameters.append(message[beg:end])
-                        return (self.prefix, self.command, self.parameters)
+                        parameters.append(message[beg:end])
+                        return (prefix, command, parameters)
 
             # handle 'middle' param
             while message[end] != chr(0x20):
                 end+=1
                 if message[end] == '\r':
-                    self.parameters.append(message[beg:end])
-                    return (self.prefix, self.command, self.parameters)
-            self.parameters.append(message[beg:end])
+                    parameters.append(message[beg:end])
+                    return (prefix, command, parameters)
+            parameters.append(message[beg:end])
             beg= end+1
             end= beg+1
 
             param_count+=1
 
-        return (self.prefix, self.command, self.parameters)
+        return (prefix, command, parameters)
 

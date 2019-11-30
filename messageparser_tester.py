@@ -3,7 +3,7 @@ from messageparser import MessageParser
 mp = MessageParser()
 
 try:
-    prefix, command, params = mp.parseMessage('NICK oskar\r\n')
+    prefix, command, params = mp.parseMessage('USER oskar oskar 127.0.0.1 :realname\r\n')
 except ValueError as e:
     print(e)
 
