@@ -2,7 +2,7 @@
 # Socket code inspired by and taken from RealPython tutorial
 # on sockets (https://realpython.com/python-sockets/)
 
-import parser
+from messageparser import MessageParser
 import socket
 import selectors
 import time
@@ -26,6 +26,19 @@ def accept_connection(server_sock):
 
     print('{} connected!'.format(addr))
 
+    mp = MessageParser()
+    print(conn.recv(512).decode())
+
+    messages = conn.recv(512).decode().split('\n')
+
+    for m in messages:
+        if m != '':
+            prefix, command, params = mp.parseMessage(m)
+            print("prefix:", prefix)
+            print("command:", command)
+            print("params:", params)
+
+
 
 def service_connection(key, mask):
     conn = key.fileobj
@@ -36,7 +49,10 @@ def service_connection(key, mask):
         print(data.timestamp)
         conn.sendall('PING oskar\r\n'.encode())
 
+    
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(('127.0.0.1', 6667))
     s.listen()
     s.setblocking(False)
