@@ -3,7 +3,7 @@ from messageparser import MessageParser
 mp = MessageParser()
 
 try:
-    prefix, command, params = mp.parseMessage('NICK middle :this is a trailing parameter \r\n')
+    prefix, command, params = mp.parseMessage('NICK oskar\r\n')
 except ValueError as e:
     print(e)
 
