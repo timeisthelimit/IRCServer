@@ -56,11 +56,12 @@ class MessageParser:
                 end+=1
                 if message[end] == '\r':
                     self.parameters.append(message[beg:end])
-                    return
+                    return (self.prefix, self.command, self.parameters)
             self.parameters.append(message[beg:end])
             beg= end+1
             end= beg+1
 
             param_count+=1
+
         return (self.prefix, self.command, self.parameters)
 
