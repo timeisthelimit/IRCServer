@@ -6,14 +6,15 @@ class MessageParser:
 
     def parseMessage(self, message):
         message_length = len(message)
-        beg= end= 0
+        beg= 0
+        end= 1
 
         # get prefix
         if message[0] == chr(0x3a):
             if message[1] == chr(0x20):
                 raise ValueError("unexpected whitespace after ':'")
-            beg= 1
-            end= 2
+            beg+=1
+            end+=1
             while message[end] != chr(0x20):
                 end+=1
             self.prefix= message[beg:end]
