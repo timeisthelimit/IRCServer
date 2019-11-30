@@ -17,7 +17,7 @@
     - It is not advised to wait forever for a reply
     - A message consists of:
         - prefix (optional)
-            - presence of a prefix is indicated with a single leading colon (0x3b)
+            - presence of a prefix is indicated with a single leading colon (0x3a)
                 - the colon must be the first character of the message
                 - there must be not gap between the colon and the prefix
             - used by servers to indicated the true origin of the message

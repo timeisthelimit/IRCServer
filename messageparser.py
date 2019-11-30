@@ -32,7 +32,7 @@ class MessageParser:
                 end+=1
                 if message[end] == '\r':
                     self.command = message[beg:end]
-                    return
+                    return (self.prefix, self.command, [])
             self.command = message[beg:end]
             beg= end+1
             end= beg+1
@@ -48,7 +48,7 @@ class MessageParser:
                     end+=1
                     if message[end] == '\r':
                         self.parameters.append(message[beg:end])
-                        return
+                        return (self.prefix, self.command, self.parameters)
 
             # handle 'middle' param
             while message[end] != chr(0x20):
@@ -61,3 +61,5 @@ class MessageParser:
             end= beg+1
 
             param_count+=1
+        return (self.prefix, self.command, self.parameters)
+
