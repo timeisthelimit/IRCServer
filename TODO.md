@@ -33,3 +33,8 @@
             - including CR-LF so max 510 for the rest of the message
     - See RFC 1459 for message structure in psudo BNF
 
+## Registration
+- check values passed comply with documentation
+    - if not throw ValueError with a descriptive message (e.g. invalid nick)
+- check whether nick exists in nick dictionary in server class object
+    - throw appropriate error
