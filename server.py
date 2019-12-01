@@ -14,13 +14,13 @@ class Client:
     def update_timestamp(self):
         self.timestamp = time.time()
 
-    def reg_nick(nick):
+    def reg_nick(self, nick):
         self.nick = nick
 
     def reg_user(self, username, hostname, servername, realname):
         self.username = username
         self.hostname = hostname
-        self.servername = servename
+        self.servername = servername 
         self.realname = realname
         
 
@@ -30,48 +30,34 @@ PORT = 6667
 def serv_log(text):
     print("[Server] {}".format(text))
 
-def reg_msg_parser(msg):
-    serv_log(msg)
-
-    if len(msg) == 0 :
-        return
-
-    if msg.find("CAP") != -1:
-        return
-
-    mp = MessageParser()
-
-    try:
-        prefix, command, params = mp.parseMessage(msg)
-    except ValueError as e:
-        print(e)
-
-    serv_log(command)
-    serv_log(params)
-
+def irc_log(t, text):
+    print("[{0}] {1}".format(t,text))
 
 def accept_connection(server_sock):
     conn, addr = server_sock.accept()
 
     mask = selectors.EVENT_READ | selectors.EVENT_WRITE
-    sock_selector.register(conn, mask, data=Client())
+    data = Client()
+    sock_selector.register(conn, mask, data)
 
     serv_log('{} connected!'.format(addr))
 
     mp = MessageParser()
-
-    messages = conn.recv(512).decode().split('\n')
-
-    serv_log('{} connected!'.format(addr))
-    for m in messages:
-        if m != '':
-            prefix, command, params = mp.parseMessage(m)
-            serv_log("prefix:" + prefix)
-            serv_log("command:" + command)
-            serv_log("params:" + params)
-
-
-
+    nick = user = True 
+    while nick or user:
+        messages = conn.recv(512).decode().split('\n')
+        for m in messages:
+            if m != '':
+                irc_log("IN", m)
+                prefix, command, params = mp.parseMessage(m)
+                if command == "NICK":
+                    data.reg_nick(params[0])
+                    nick = False
+                if command == "USER":
+                    data.reg_user(*params)
+                    user = False 
+    serv_log("User {} has logged in".format(data.username))
+   
     
 def service_connection(key, mask):
     conn = key.fileobj
@@ -79,8 +65,10 @@ def service_connection(key, mask):
 
     if data.timestamp+10 < time.time():
         data.update_timestamp()
-        print(data.timestamp)
-        conn.sendall('PING oskar\r\n'.encode())
+        
+        msg = "PING {}\r\n".format(data.nick)
+        irc_log("OUT",msg.strip())
+        conn.sendall(msg.encode())
 
     
 
