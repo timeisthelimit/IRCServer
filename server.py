@@ -33,6 +33,23 @@ def serv_log(text):
 def irc_log(t, text):
     print("[{0}] {1}".format(t,text))
 
+def confirm_reg(conn, data):
+    msg = ":{0} 001 {1} :Hi welcome to this IRC server \r\n".format(HOST, data.nick) 
+    conn.send(msg.encode())
+    irc_log("OUT",msg.strip()) 
+
+    msg = ":{0} 002 {1} :Your host is {0} IRC server made as an assignment\r\n".format(HOST,data.nick)
+    conn.send(msg.encode())
+    irc_log("OUT",msg.strip()) 
+
+    msg = ":{0} 003 {1} :This server was created sometime\r\n".format(HOST,data.nick)
+    conn.send(msg.encode())
+    irc_log("OUT",msg.strip()) 
+
+    msg = ":{0} 004 {1} {0} assignment_server 0 0\r\n".format(HOST,data.nick)
+    conn.send(msg.encode())
+    irc_log("OUT",msg.strip()) 
+
 def accept_connection(server_sock):
     conn, addr = server_sock.accept()
 
@@ -56,6 +73,7 @@ def accept_connection(server_sock):
                 if command == "USER":
                     data.reg_user(*params)
                     user = False 
+    confirm_reg(conn, data)
     serv_log("User {} has logged in".format(data.username))
    
     
