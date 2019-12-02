@@ -38,3 +38,13 @@
     - if not throw ValueError with a descriptive message (e.g. invalid nick)
 - check whether nick exists in nick dictionary in server class object
     - throw appropriate error
+
+## Message Details
+- for each message
+    - check that all necessary parameters are present
+    - check each parameter for validity
+    - send appropriate respone to the client
+    - in the case of a comma separated list parameter a rely must be sent for each item in the list
+
+- QUIT [Quit Message]
+    - upon receiving this message from a client the server must close the connection with that client
