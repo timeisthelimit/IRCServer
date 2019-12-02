@@ -20,3 +20,6 @@ def confirm_reg(conn, data, host):
     msg = ":{0} 004 {1} {0} assignment_server 0 0\r\n".format(host,data.nick)
     conn.send(msg.encode())
     irc_log("OUT",msg.strip())
+
+def ref_reg(conn, data, host):
+     msg = ":{0} 451 {1} :You have not registered \r\n".format(host, data.nick) 
