@@ -46,5 +46,5 @@
     - send appropriate respone to the client
     - in the case of a comma separated list parameter a rely must be sent for each item in the list
 
-- QUIT [Quit Message]
-    - upon receiving this message from a client the server must close the connection with that client
+- ~~QUIT~~ [Quit Message]
+    - ~~upon receiving this message from a client the server must close the connection with that client~~
