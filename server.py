@@ -28,44 +28,46 @@ def accept_connection(server_sock, server):
     sock_selector.register(conn, mask, data)
     sfn.serv_log('{} connected!'.format(addr))
 
-    nick_set = user_set = True 
+    nick_set = user_set = False 
     attemps = 0
 
-    while nick_set or user_set:
+    while not nick_set or not user_set:
+
+        # After 5 messages it timesout
+        # The socket should take care of an actaul timeout (ms/s)
+        if attemps>3: 
+            sfn.no_reg(conn, HOST)
+            conn.close()
+            # close socket
+            return
+
         messages = conn.recv(512).decode().split('\n')
         for m in messages:
             if m != '':
                 sfn.irc_log("IN", m)
                 prefix, command, params = mp.parseMessage(m)
                 if command == "NICK":
-                    data.reg_nick(params[0])
-                    nick_set = False
+                    nick_set = True
+                    # checking for nick collision
+                    for nick in server.clients:
+                        if nick == data.nick:
+                            attemps += 1
+                            sfn.nick_collision(conn, data, HOST)
+                            nick_set = False
+
+                    # Setting nick if no nick collision
+                    if nick_set:
+                        data.reg_nick(params[0])
+
                 elif command == "USER":
                     data.reg_user(*params)
-                    user_set = False 
+                    user_set = True 
                 else:
                     attemps+=1
-                
-            # After 5 messages it timesout
-            # The socket should take care of an actaul timeout (ms/s)
-            if attemps>5: 
-                sfn.no_reg(conn, HOST)
-                # close socket
-                return
-
-            if not nick_set:
-                # No nick provided
-                sfn.no_nick(conn, HOST)
-                # close socket
-                return
-
-            for nick in server.client:
-                if nick == data.nick:
-                    sfn.nick_collision(conn, data, HOST)
-                    # close socket
-                    return 
-
     
+    # if not nick_set:
+        # sfn.no_nick(conn, HOST)
+
     sfn.confirm_reg(conn, data, HOST)
     sfn.serv_log("User {} has logged in".format(data.username))
 
