@@ -18,57 +18,46 @@ class Server:
 
  
 mp = MessageParser()
+HOST = '127.0.0.1'
+PORT = 6667
+
 def accept_connection(server_sock, server):
     conn, addr = server_sock.accept()
-
-    # object to store all data on the client
     data = Client()
+    mask = selectors.EVENT_READ | selectors.EVENT_WRITE
+    sock_selector.register(conn, mask, data)
+    sfn.serv_log('{} connected!'.format(addr))
 
-    # receive and silently ignore 'CAP LS 302' message
-    conn.recv(512).decode().split('\n')
+    nick_set = user_set = True 
+    attemps = 0
 
-
-    # receive NICK and USER messages
-    nick_set = False
-    userdata_set = False
-    messages = conn.recv(512).decode().split('\n')
-    for m in messages:
-        if m != '':
-            sfn.irc_log("IN", m)
-            prefix, command, params = mp.parseMessage(m)
-            if command == "NICK":
-                try:
-                    data.reg_nick(params[0]) # implement raise exception 
-                    nick_set = True
-                except Exception as e:
-                    print(e)
-                    # inform the client attempting to connect?
-                    return
-            if command == "USER":
-                try:
-                    data.reg_user(*params) # implement raise exception 
-                    userdata_set = True
-                except Exception as e:
-                    print(e)
-                    # inform the client attempting to connect?
-                    return
-
-
-    if nick_set == True and userdata_set == True:
-        # register new socket with socket selector, and associate it with client data object
-        mask = selectors.EVENT_READ | selectors.EVENT_WRITE
-        sock_selector.register(conn, mask, data)
-
-        sfn.serv_log('{} connected!'.format(addr))
-
-        sfn.confirm_reg(conn, data, HOST)
-        sfn.serv_log("User {} has logged in".format(data.username))
+    while nick_set or user_set:
+        messages = conn.recv(512).decode().split('\n')
+        for m in messages:
+            if m != '':
+                sfn.irc_log("IN", m)
+                prefix, command, params = mp.parseMessage(m)
+                if command == "NICK":
+                    data.reg_nick(params[0])
+                    nick_set = False
+                elif command == "USER":
+                    data.reg_user(*params)
+                    user_set = False 
+                else:
+                    attemps+=1
+                
+            # After 5 messages it timesout
+            # The socket should take care of an actaul timeout (ms/s)
+            if attemps>5: 
+                # Let the user know that connection was refused 
+                # close socket
+                return
     
-        server.clients[data.nick] = {(conn, data)}
-        print("These are all our clients:", server.clients)
-    else:
-        pass #handle registration error here
+    sfn.confirm_reg(conn, data, HOST)
+    sfn.serv_log("User {} has logged in".format(data.username))
 
+    server.clients[data.nick] = {(conn, data)}
+    sfn.serv_log("These are all our clients: {}".format(server.clients))
 
 def service_connection(key, mask):
     conn = key.fileobj
@@ -80,10 +69,6 @@ def service_connection(key, mask):
         msg = "PING {}\r\n".format(data.nick)
         sfn.irc_log("OUT",msg.strip())
         conn.sendall(msg.encode())
-
-    
-HOST = '127.0.0.1'
-PORT = 6667
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
