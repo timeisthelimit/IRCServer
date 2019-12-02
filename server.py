@@ -49,18 +49,19 @@ def accept_connection(server_sock, server):
             # After 5 messages it timesout
             # The socket should take care of an actaul timeout (ms/s)
             if attemps>5: 
-                # Let the user know that connection was refused 
-                # 451 not registered
+                sfn.no_reg(conn, HOST)
                 # close socket
                 return
 
             if not nick_set:
                 # No nick provided
+                sfn.no_nick(conn, HOST)
+                # close socket
                 return
 
             for nick in server.client:
                 if nick == data.nick:
-                    # Existing nickname error
+                    sfn.nick_collision(conn, data, HOST)
                     # close socket
                     return 
 
