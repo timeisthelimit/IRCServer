@@ -4,16 +4,16 @@
 
 from messageparser import MessageParser
 from client import Client
-from channel import Channel
 import serverfunctions as sfn
 import socket
 import selectors
 import time
 
+command_handlers = {'JOIN':sfn.handle_JOIN, 'PRIVMSG':sfn.handle_PRIVMSG}
 mp = MessageParser()
 
 class Server:
-    # dict of channel names to lists of client sockets
+    # dict of channel names to Channel class object
     channels = {}
 
     # dict of nicks to (<client socket>, <Client object>) tuples
@@ -24,9 +24,6 @@ server = Server()
 #accept client connection
 def accept_connection(server_sock):
     conn, addr = server_sock.accept()
-    print("connection: ", conn)
-
-    print(conn)
 
     # object to store all data on the client
     data = Client()
@@ -83,6 +80,8 @@ def service_connection(key, mask):
     data = key.data
 
     if mask & selectors.EVENT_WRITE:
+
+        # ping client if they haven't been pinged in the last 10 seconds
         if data.timestamp+10 < time.time():
             data.update_timestamp()
             
@@ -90,35 +89,30 @@ def service_connection(key, mask):
             sfn.irc_log("OUT",msg.strip())
             conn.sendall(msg.encode())
 
-        
-
+    
     if mask & selectors.EVENT_READ:
         messages = conn.recv(512).decode().split('\n')
+
+        # split messages and queue them in inboud buffer
         for m in messages:
             if m != '':
                 sfn.irc_log("IN", m)
                 data.inb.append(m)
     
+        # pop one message off inbound buffer
         prefix, command, params = mp.parseMessage(data.inb.pop(0))
-
+        try:
+            command_handlers[command](params, server, data, HOST)
+        except KeyError as e:
+            print("[Server] Unhandled IRC Command:", e)
         
-        if command == "PRIVMSG":
-            msg = ":{} PRIVMSG {} :{}\r\n".format(data.nick, params[0], params[1])
-            server.clients[params[0]][0].sendall(msg.encode())
-            sfn.irc_log("OUT", msg)
-        
-        if command == "JOIN":
-            # We are using a try catch here on the assumption
-            # most of the time people will be joining existing
-            # channels rather than creating new ones. So we are
-            # assuming that a channel exists, and the excepional
-            # case is that it doesn't.
 
-            try:
-                channel = server.channels[params[0]]
-                channel.clients.append(data.nick)
-            except KeyError:
-                server.channels[params[0]] = Channel(data.nick)
+        # if command == "PRIVMSG":
+        #     command_handlers['PRIVMSG'](params, server, data, HOST)
+        
+        # elif command == 'JOIN':
+        #     command_handlers['JOIN'](params, server, data, HOST)
+            
                 
 
 

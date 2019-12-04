@@ -66,3 +66,10 @@ class MessageParser:
 
         return (prefix, command, parameters)
 
+    def parse_csv_list(self, _list):
+        split_list=[]
+        for item in _list.split(','):
+            if item != '':
+                split_list.append(item.strip())
+
+        return split_list
