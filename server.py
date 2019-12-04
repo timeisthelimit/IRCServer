@@ -38,7 +38,7 @@ def accept_connection(server_sock):
     while not nick_set or not user_set:
 
         # After 5 messages it timesout
-        # The socket should take care of an actaul timeout (ms/s)
+        # The socket should take care of an actaul timeout (ms)
         if attemps>3: 
             sfn.no_reg(conn, HOST)
             conn.close()
@@ -52,13 +52,6 @@ def accept_connection(server_sock):
                 prefix, command, params = mp.parseMessage(m)
                 if command == "NICK":
                     data.reg_nick(params[0])
-                    # checking for nick collision
-                    #for nick in server.clients:
-                    #    if nick == data.nick:
-                    #        attemps += 1
-                    #        sfn.nick_collision(conn, data, HOST)
-                    #        nick_set = False
-
                     if  data.nick in server.clients.keys():
                         attemps +=1
                         sfn.nick_collision(conn, data, HOST)
@@ -83,7 +76,7 @@ def accept_connection(server_sock):
     sfn.confirm_reg(conn, data, HOST)
     sfn.serv_log("User {} has logged in".format(data.username))
 
-    server.clients[data.nick] = {(conn, data)}
+    server.clients[data.nick] = (conn, data)
     sfn.serv_log("These are all our clients: {}".format(server.clients))
 
 # service client connection

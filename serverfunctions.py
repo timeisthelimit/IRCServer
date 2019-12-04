@@ -49,6 +49,10 @@ def nick_collision(conn, data, host):
     conn.send(msg.encode())
     irc_log("OUT",msg.strip())
 
+##################
+#Command Handlers#
+##################
+
 def handle_JOIN(params, server, client, HOST):
     # We are using a try catch here on the assumption
     # most of the time people will be joining existing
