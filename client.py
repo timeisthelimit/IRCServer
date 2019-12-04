@@ -1,6 +1,11 @@
 import time
 
 class Client:
+
+    # inbound and outbound stream buffers, respectively
+    inb = []
+    outb = []
+
     def __init__(self):
         self.timestamp = time.time()
 
