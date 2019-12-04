@@ -19,60 +19,65 @@ class Server:
     # dict of nicks to (<client socket>, <Client object>) tuples
     clients = {}
 
+mp = MessageParser()
+HOST = '127.0.0.1'
+PORT = 6667
 server = Server()
 
 #accept client connection
 def accept_connection(server_sock):
     conn, addr = server_sock.accept()
-
-    # object to store all data on the client
     data = Client()
+    mask = selectors.EVENT_READ | selectors.EVENT_WRITE
+    sock_selector.register(conn, mask, data)
+    sfn.serv_log('{} connected!'.format(addr))
 
-    # receive and silently ignore 'CAP LS 302' message
-    conn.recv(512).decode().split('\n')
+    nick_set = user_set = False 
+    attemps = 0
 
+    while not nick_set or not user_set:
 
-    # receive NICK and USER messages
-    nick_set = False
-    userdata_set = False
-    messages = conn.recv(512).decode().split('\n')
-    for m in messages:
-        if m != '':
-            sfn.irc_log("IN", m)
-            prefix, command, params = mp.parseMessage(m)
-            if command == "NICK":
-                try:
-                    data.reg_nick(params[0]) # implement raise exception 
+        # After 5 messages it timesout
+        # The socket should take care of an actaul timeout (ms/s)
+        if attemps>3: 
+            sfn.no_reg(conn, HOST)
+            conn.close()
+            # close socket
+            return
+
+        messages = conn.recv(512).decode().split('\n')
+        for m in messages:
+            if m != '':
+                sfn.irc_log("IN", m)
+                prefix, command, params = mp.parseMessage(m)
+                if command == "NICK":
                     nick_set = True
-                except Exception as e:
-                    print(e)
-                    # inform the client attempting to connect?
-                    return
-            if command == "USER":
-                try:
-                    data.reg_user(*params) # implement raise exception 
-                    userdata_set = True
-                except Exception as e:
-                    print(e)
-                    # inform the client attempting to connect?
-                    return
+                    # checking for nick collision
+                    for nick in server.clients:
+                        if nick == data.nick:
+                            attemps += 1
+                            sfn.nick_collision(conn, data, HOST)
+                            nick_set = False
 
+                    # Setting nick if no nick collision
+                    if nick_set:
+                        data.reg_nick(params[0])
 
-    if nick_set == True and userdata_set == True:
-        # register new socket with socket selector, and associate it with client data object
-        mask = selectors.EVENT_READ | selectors.EVENT_WRITE
-        sock_selector.register(conn, mask, data)
-
-        sfn.serv_log('{} connected!'.format(addr))
-
-        sfn.confirm_reg(conn, data, HOST)
-        sfn.serv_log("User {} has logged in".format(data.username))
+                elif command == "USER":
+                    data.reg_user(*params)
+                    user_set = True 
+                else:
+                    attemps+=1
     
-        # associate this nick with it's socket and data via servers clients dictionary
-        server.clients[data.nick] = (conn, data)
-    else:
-        pass #handle registration error here
 
+    # if not nick_set:
+        # sfn.no_nick(conn, HOST)
+    
+    sfn.confirm_reg(conn, data, HOST)
+    sfn.serv_log("User {} has logged in".format(data.username))
+
+    server.clients[data.nick] = {(conn, data)}
+    sfn.serv_log("These are all our clients: {}".format(server.clients))
 
 # service client connection
 def service_connection(key, mask):
@@ -88,7 +93,6 @@ def service_connection(key, mask):
             msg = "PING {}\r\n".format(data.nick)
             sfn.irc_log("OUT",msg.strip())
             conn.sendall(msg.encode())
-
     
     if mask & selectors.EVENT_READ:
         messages = conn.recv(512).decode().split('\n')
@@ -114,12 +118,6 @@ def service_connection(key, mask):
         #     command_handlers['JOIN'](params, server, data, HOST)
             
                 
-
-
-
-HOST = '127.0.0.1'
-PORT = 6667
-
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(('127.0.0.1', 6667))
