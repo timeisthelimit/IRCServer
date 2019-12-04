@@ -51,17 +51,24 @@ def accept_connection(server_sock):
                 sfn.irc_log("IN", m)
                 prefix, command, params = mp.parseMessage(m)
                 if command == "NICK":
-                    nick_set = True
+                    data.reg_nick(params[0])
                     # checking for nick collision
-                    for nick in server.clients:
-                        if nick == data.nick:
-                            attemps += 1
-                            sfn.nick_collision(conn, data, HOST)
-                            nick_set = False
+                    #for nick in server.clients:
+                    #    if nick == data.nick:
+                    #        attemps += 1
+                    #        sfn.nick_collision(conn, data, HOST)
+                    #        nick_set = False
+
+                    if  data.nick in server.clients.keys():
+                        attemps +=1
+                        sfn.nick_collision(conn, data, HOST)
+                        nick_set = False
+                    else:
+                        nick_set = True
 
                     # Setting nick if no nick collision
-                    if nick_set:
-                        data.reg_nick(params[0])
+                    #if nick_set:
+                    #    data.reg_nick(params[0])
 
                 elif command == "USER":
                     data.reg_user(*params)
