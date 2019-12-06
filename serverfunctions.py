@@ -1,3 +1,4 @@
+import socket
 from channel import Channel
 from messageparser import MessageParser
 
@@ -88,6 +89,8 @@ def handle_JOIN(params, server, client, HOST):
 
         # create new Channel object and add to servers channel dictionary
         channel = Channel(client.nick, channel_name)
+        channel.clients.append(client.nick)
+        client.channels.append(channel)
         server.addChannel(channel_name, channel)
 
         msg = ":{} JOIN {}\r\n".format(client.nick, channel_name)
@@ -120,3 +123,46 @@ def handle_PRIVMSG(params, server, client, HOST):
 
 def handle_PONG(params, server, client, HOST):
     pass
+
+###################################
+# CLIENT REMOVAL CLEANUP FUNCTION #
+###################################
+
+# safely remove clients presence from the server
+#
+# generally this function will be called on when
+# a QUIT command is received, however,
+# it may also be called on other exceptional
+# situations to prevent inconsistencies in the system
+# causing unpredictable errors down the line
+def remove_client(key, sock_selector, server):
+
+    conn = key.fileobj
+    client = key.data
+
+    # unregister socket from socket selector
+    # so no attempt will be made to read or write to it
+    sock_selector.unregister(conn)
+
+
+    # stop reading from the socket, channels may still write
+    # as we have to remove 
+    conn.shutdown(socket.SHUT_RD)
+
+
+    # Remove client from channels where client is subscribed
+    # before we remove nicks as channel may still reference
+    # we will handle that situation as well in channel
+    # message sending function but its best to be safe
+    for channel in client.channels:
+        channel.clients.remove(client.nick)
+
+    # Remove from clients dictionary
+    server.deleteClient(client.nick)
+
+
+    # shutdown writing to socket and close connection
+    conn.shutdown(socket.SHUT_WR)
+    conn.close()
+
+
