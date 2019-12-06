@@ -14,10 +14,30 @@ mp = MessageParser()
 
 class Server:
     # dict of channel names to Channel class object
-    channels = {}
+    _channels = {}
 
     # dict of nicks to (<client socket>, <Client object>) tuples
-    clients = {}
+    _clients = {}
+
+    def getClients(self):
+        return self._clients
+
+    def addClient(self, nick, client_socket, client_object):
+        self._clients[nick] = (client_socket, client_object)
+
+    def deleteClient(self, nick):
+        self._clients.pop(nick, d=None)
+
+    def getChannels(self):
+        return self._channels
+
+    def addChannel(self, channel_name, channel_object):
+        self._channels[channel_name] = channel_object
+
+    def deleteChannel(self, channel_name):
+        self._channels.pop(channel_name, d=None)
+
+
 
 mp = MessageParser()
 HOST = '127.0.0.1'
@@ -56,7 +76,7 @@ def accept_connection(server_sock):
                     else:
                         data.reg_nick(params[0])
                     
-                        if  data.nick in server.clients.keys():
+                        if  data.nick in server.getClients().keys():
                             attemps +=1
                             sfn.nick_collision(conn, data, HOST)
                             nick_set = False
@@ -80,8 +100,8 @@ def accept_connection(server_sock):
     sfn.confirm_reg(conn, data, HOST)
     sfn.serv_log("User {} has logged in".format(data.username))
 
-    server.clients[data.nick] = (conn, data)
-    sfn.serv_log("These are all our clients: {}".format(server.clients))
+    #server.clients[data.nick] = (conn, data)
+    server.addClient(data.nick, conn, data)
 
 # service client connection
 def service_connection(key, mask):
@@ -107,19 +127,12 @@ def service_connection(key, mask):
                 sfn.irc_log("IN", m)
                 data.inb.append(m)
     
-        # pop one message off inbound buffer
+        # pop one message off inbound buffer and handle it
         prefix, command, params = mp.parseMessage(data.inb.pop(0))
         try:
             command_handlers[command](params, server, data, HOST)
         except KeyError as e:
             print("[Server] Unhandled IRC Command:", e)
-        
-
-        # if command == "PRIVMSG":
-        #     command_handlers['PRIVMSG'](params, server, data, HOST)
-        
-        # elif command == 'JOIN':
-        #     command_handlers['JOIN'](params, server, data, HOST)
             
                 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
