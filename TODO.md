@@ -28,7 +28,7 @@
             - valid IRC command or a three digit number represented in ASCII text
         - command parameters (up to 15)
         - all constituents are separated by one or more ASCII space (0x20)
-        - messages are always terminated with CT-LF pair
+        - messages are always terminated with CR-LF pair
         - messages shall not exceed 512 characters
             - including CR-LF so max 510 for the rest of the message
     - See RFC 1459 for message structure in psudo BNF
